@@ -1,0 +1,12 @@
+*.log
+*.vcd
+*.fsdb
+*.wlf
+*.swp
+simv
+csrc/
+verdiLog/
+*.daidir
+novas.*
+ucli.key
+verdi_config_file
