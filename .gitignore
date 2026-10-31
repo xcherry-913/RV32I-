@@ -1,3 +1,5 @@
+./generated
+./inst_txt
 *.log
 *.vcd
 *.fsdb
@@ -5,7 +7,7 @@
 *.swp
 simv
 csrc/
-verdiLog/
+
 *.daidir
 novas.*
 ucli.key
