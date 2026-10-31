@@ -14,7 +14,7 @@ module id(
     input [31:0] rs2_data_i,
 
     //to id_ex
-    output [31:0] inst_o,
+    output [2:0] fun3_o,
     output [31:0] inst_addr_o,
     output reg [31:0] op1_o,
     output reg [31:0] op2_o,
@@ -23,8 +23,11 @@ module id(
     output reg [3:0] alu_ctrl,
     output reg  mem_read,   
     output reg  mem_write,
-    output reg  [1:0] wb_sel
+    output reg  [1:0] wb_sel,
+    output reg  [31:0] imm_o
 );
+
+    assign inst_addr_o = inst_addr_i;
     //编码ALU操作和写回选择
     // localparam ALU_ADD = 4'b0000;
     // localparam ALU_SUB = 4'b0001;
@@ -48,7 +51,7 @@ module id(
 
     assign opcode   = inst_i[6:0];
     assign rd_addr_o  = inst_i[11:7];
-    assign fun3   = inst_i[14:12];
+    assign fun3   = inst_i[14:12];assign fun3_o = fun3;
     assign rs1_addr_o = inst_i[19:15];
     assign rs2_addr_o = inst_i[24:20];
     assign fun7   = inst_i[31:25];
@@ -67,7 +70,16 @@ module id(
     
 
     always @(*) begin
+        op1_o = 32'b0;
+        op2_o = 32'b0;
+        gpr_wen = 1'b0;  
+        alu_ctrl = 4'b0;
+        mem_read = 1'b0;
+        mem_write = 1'b0;
+        wb_sel = 2'b0;
+        imm_o = 32'b0;
         case(opcode)
+            //I型指令
             `INST_TYPE_I : begin
                 case(fun3)
                     `INST_ADDI:begin
@@ -83,11 +95,13 @@ module id(
                         op2_o = 32'b0;
                         gpr_wen = 1'b0;  
                         alu_ctrl = 4'b0;   
-                        wb_sel = 2'b0;                  
+                        wb_sel = 2'b0;     
+                        imm_o = 32'b0;             
                     end
                 endcase
             end
 
+            //R和M型指令
             `INST_TYPE_R_M:begin
                 case (fun3)
                     `INST_ADD_SUB: begin
@@ -95,20 +109,65 @@ module id(
                         op2_o = rs2_data_i;
                         gpr_wen = 1'b1;
                         alu_ctrl = (fun7 == 7'b0)? `ALU_ADD : `ALU_SUB;
-                        wb_sel = `WB_ALU;            
+                        wb_sel = `WB_ALU;           
                     end
                     default: begin
                         op1_o = 32'b0;
                         op2_o = 32'b0;
                         gpr_wen = 1'b0;  
                         alu_ctrl = 4'b0;   
-                        wb_sel = 2'b0;                          
+                        wb_sel = 2'b0;    
+                        imm_o = 32'b0;                      
                     end
 
                 endcase
             end
 
+            //分支跳转指令
+            `INST_TYPE_B : begin
+                //所有的B型指令都是一样的译码输出，不需要case
+                //区分放在ex模块，根据fun3的3位做不同选择
+                    // `INST_BEQ,`INST_BNE:begin
+                    //     op1_o = rs1_data_i;
+                    //     op2_o = rs2_data_i;
+                    //     gpr_wen = 1'b0;  
+                    //     alu_ctrl = `ALU_CMP;   
+                    //     wb_sel = 2'b0;   
+                    //     imm_o = imm_B;                     
+                    // end
 
+                    // `INST_BNE:begin
+                    //     op1_o = rs1_data_i;
+                    //     op2_o = rs2_data_i;
+                    //     gpr_wen = 1'b0;  
+                    //     alu_ctrl = `ALU_CMP;   
+                    //     wb_sel = 2'b0;    
+                    //     imm_o = imm_B;                    
+                    // end
+                    op1_o = rs1_data_i;
+                    op2_o = rs2_data_i;
+                    alu_ctrl = `ALU_CMP;     
+                    imm_o = imm_B;                     
+            end
+
+            //JAL指令
+            `INST_JAL:begin
+                op1_o = imm_J;
+                gpr_wen = 1'b1;  
+                alu_ctrl = `ALU_JAL;   
+                wb_sel = `WB_ALU;   
+            end
+            //JALR指令
+            `INST_JALR:begin  
+            end            
+
+            //加载高位立即数指令
+            `INST_LUI:begin
+                op1_o = imm_U;
+                gpr_wen = 1'b1;  
+                alu_ctrl = `ALU_LUI;   
+                wb_sel = `WB_ALU;                  
+            end
             default :begin
                         op1_o = 32'b0;
                         op2_o = 32'b0;
@@ -117,12 +176,12 @@ module id(
                         mem_read = 1'b0;
                         mem_write = 1'b0;
                         wb_sel = 2'b0;
+                        imm_o = 32'b0;
             end
         endcase
     end
 
-    assign inst_o = inst_i;
-    assign inst_addr_o = inst_addr_i;
+
 
 
 endmodule

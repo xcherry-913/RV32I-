@@ -1,10 +1,10 @@
-all: clean com sim
-
 clean:
-	rm -rf csrc simv* ucli.key novas*  verdiLog *.log
+	rm -rf csrc simv* ucli.key novas*   *.log
 
-com:
-	vcs -full64 -sverilog +v2k -debug_access+all -kdb -f flist.f
+com: clean
+	vcs -full64 -sverilog +v2k +lint=TFIPC-L -debug_access+all -kdb -f flist.f
 	
-sim:
+sim: com
 	./simv -l sim_vcs.log
+
+all: sim

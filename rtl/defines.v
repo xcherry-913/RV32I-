@@ -61,7 +61,7 @@
 `define INST_ECALL  32'h73
 `define INST_EBREAK 32'h00100073
 
-// J type inst
+// B type inst
 `define INST_TYPE_B 7'b1100011
 `define INST_BEQ    3'b000
 `define INST_BNE    3'b001
@@ -81,6 +81,12 @@
 `define ALU_SRA  4'd7
 `define ALU_SLT  4'd8
 `define ALU_SLTU  4'd9
+
+`define ALU_CMP    4'd10
+`define ALU_JAL    4'd11
+`define ALU_JALR    4'd12
+`define ALU_LUI    4'd13
+
 
 //WB SEL
 `define WB_ALU  2'b00
