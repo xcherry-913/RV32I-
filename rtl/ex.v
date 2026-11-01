@@ -46,22 +46,40 @@ module ex(
     jump_pc_o = 32'b0;
     flush_en_o = 1'b0;
     case(alu_ctrl_i)
-        `ALU_ADD:begin
-            rd_wdata_o = op1_i + op2_i;
-        end
-
-        `ALU_SUB:begin
-            rd_wdata_o = op1_i - op2_i;
-        end
+        `ALU_ADD:rd_wdata_o = op1_i + op2_i;
+        `ALU_SUB:rd_wdata_o = op1_i - op2_i;
+        `ALU_AND:rd_wdata_o = op1_i & op2_i;
+        `ALU_OR :rd_wdata_o = op1_i | op2_i;
+        `ALU_XOR:rd_wdata_o = op1_i ^ op2_i;
+        `ALU_SLL:rd_wdata_o = op1_i << op2_i[4:0];
+        `ALU_SRL:rd_wdata_o = op1_i >> op2_i[4:0];
+        `ALU_SRA:rd_wdata_o = $signed(op1_i) >>> op2_i[4:0];
+        `ALU_SLT:rd_wdata_o = ($signed(op1_i) < $signed(op2_i)) ? 32'd1 : 32'd0;
+        `ALU_SLTU:rd_wdata_o = op1_i < op2_i ? 32'b1 : 32'b0;
 
         `ALU_CMP:begin
             case(fun3[2:1])
                 2'b00:begin
-                    //000:beq   001:bne
+                    //0:beq   1:bne
                     jump_en_o = fun3[0] ? ~alu_eq : alu_eq;
                     jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
                     flush_en_o = jump_en_o;
                 end
+
+                2'b10:begin
+                    //0:blt   1:bge
+                    jump_en_o = fun3[0] ? ~alu_lts : alu_lts;
+                    jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
+                    flush_en_o = jump_en_o;
+                end                
+
+                2'b11:begin
+                    //0:bltu   1:bgeu
+                    jump_en_o = fun3[0] ? ~alu_ltu : alu_ltu;
+                    jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
+                    flush_en_o = jump_en_o;
+                end                
+
                 default :begin
                     jump_en_o = 1'b0;
                     jump_pc_o = 32'b0;
@@ -77,9 +95,21 @@ module ex(
             rd_wdata_o = inst_addr_i + 4;
         end
 
+        `ALU_JALR:begin
+            jump_en_o = 1'b1;
+            jump_pc_o = (op1_i+op2_i) & ~(32'b1);
+            flush_en_o = jump_en_o;
+            rd_wdata_o = inst_addr_i + 4;            
+        end
+
         `ALU_LUI:begin
             rd_wdata_o = op1_i;
         end
+
+        `ALU_AUIPC:begin
+            rd_wdata_o = op1_i+inst_addr_i;
+        end     
+
         default:begin
             rd_wdata_o = 32'b0;
             jump_en_o = 1'b0;

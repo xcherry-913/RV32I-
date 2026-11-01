@@ -81,15 +81,19 @@ module id(
         case(opcode)
             //I型指令
             `INST_TYPE_I : begin
+                op1_o = rs1_data_i;
+                op2_o = imm_I;
+                gpr_wen = 1'b1;
+                wb_sel = `WB_ALU;
                 case(fun3)
-                    `INST_ADDI:begin
-                        op1_o = rs1_data_i;
-                        op2_o = imm_I;
-                        gpr_wen = 1'b1;
-                        alu_ctrl = `ALU_ADD;
-                        wb_sel = `WB_ALU;
-                    end
-
+                    `INST_ADDI: alu_ctrl = `ALU_ADD;
+                    `INST_SLTI: alu_ctrl = `ALU_SLT;
+                    `INST_SLTIU: alu_ctrl = `ALU_SLTU;
+                    `INST_XORI: alu_ctrl = `ALU_XOR;
+                    `INST_ORI: alu_ctrl = `ALU_OR;
+                    `INST_ANDI: alu_ctrl = `ALU_AND;
+                    `INST_SLLI: alu_ctrl = `ALU_SLL;
+                    `INST_SRI: alu_ctrl = (fun7 == 7'b0)?`ALU_SRL :`ALU_SRA;
                     default:begin
                         op1_o = 32'b0;
                         op2_o = 32'b0;
@@ -101,16 +105,21 @@ module id(
                 endcase
             end
 
-            //R和M型指令
+            //R型指令
             `INST_TYPE_R_M:begin
+                op1_o = rs1_data_i;
+                op2_o = rs2_data_i;
+                gpr_wen = 1'b1;
+                wb_sel = `WB_ALU;  
                 case (fun3)
-                    `INST_ADD_SUB: begin
-                        op1_o = rs1_data_i;
-                        op2_o = rs2_data_i;
-                        gpr_wen = 1'b1;
-                        alu_ctrl = (fun7 == 7'b0)? `ALU_ADD : `ALU_SUB;
-                        wb_sel = `WB_ALU;           
-                    end
+                    `INST_ADD_SUB: alu_ctrl = (fun7 == 7'b0)? `ALU_ADD : `ALU_SUB;
+                    `INST_SLT: alu_ctrl = `ALU_SLT;
+                    `INST_SLTU: alu_ctrl = `ALU_SLTU;
+                    `INST_XOR: alu_ctrl = `ALU_XOR;
+                    `INST_OR: alu_ctrl = `ALU_OR;
+                    `INST_AND: alu_ctrl = `ALU_AND;
+                    `INST_SLL: alu_ctrl = `ALU_SLL;
+                    `INST_SR: alu_ctrl = (fun7 == 7'b0)?`ALU_SRL :`ALU_SRA;                    
                     default: begin
                         op1_o = 32'b0;
                         op2_o = 32'b0;
@@ -128,22 +137,6 @@ module id(
                 //所有的B型指令都是一样的译码输出，不需要case
                 //区分放在ex模块，根据fun3的3位做不同选择
                     // `INST_BEQ,`INST_BNE:begin
-                    //     op1_o = rs1_data_i;
-                    //     op2_o = rs2_data_i;
-                    //     gpr_wen = 1'b0;  
-                    //     alu_ctrl = `ALU_CMP;   
-                    //     wb_sel = 2'b0;   
-                    //     imm_o = imm_B;                     
-                    // end
-
-                    // `INST_BNE:begin
-                    //     op1_o = rs1_data_i;
-                    //     op2_o = rs2_data_i;
-                    //     gpr_wen = 1'b0;  
-                    //     alu_ctrl = `ALU_CMP;   
-                    //     wb_sel = 2'b0;    
-                    //     imm_o = imm_B;                    
-                    // end
                     op1_o = rs1_data_i;
                     op2_o = rs2_data_i;
                     alu_ctrl = `ALU_CMP;     
@@ -158,7 +151,12 @@ module id(
                 wb_sel = `WB_ALU;   
             end
             //JALR指令
-            `INST_JALR:begin  
+            `INST_JALR:begin 
+                op1_o = rs1_data_i;
+                op2_o = imm_I;
+                gpr_wen = 1'b1;  
+                alu_ctrl = `ALU_JALR;   
+                wb_sel = `WB_ALU;                    
             end            
 
             //加载高位立即数指令
@@ -168,6 +166,14 @@ module id(
                 alu_ctrl = `ALU_LUI;   
                 wb_sel = `WB_ALU;                  
             end
+
+            `INST_AUIPC:begin
+                op1_o = imm_U;
+                gpr_wen = 1'b1;  
+                alu_ctrl = `ALU_AUIPC;   
+                wb_sel = `WB_ALU;                  
+            end
+
             default :begin
                         op1_o = 32'b0;
                         op2_o = 32'b0;

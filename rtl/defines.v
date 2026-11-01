@@ -86,6 +86,7 @@
 `define ALU_JAL    4'd11
 `define ALU_JALR    4'd12
 `define ALU_LUI    4'd13
+`define ALU_AUIPC    4'd14
 
 
 //WB SEL
