@@ -64,6 +64,12 @@ module top(
     wire        jump_en;
     wire [31:0] jump_pc;
 
+    //EX <-> ALU
+    wire [3:0]  ex_alu_ctrl_o;  
+    wire [31:0] ex_alu_op1_o;    
+    wire [31:0] ex_alu_op2_o;    
+    wire [31:0] alu_out;  
+
     //=======================================
     //第一级流水：pc+ifetch
     //=======================================
@@ -166,7 +172,6 @@ module top(
     //第三级流水：执行+写回gpr
     //=======================================
 
-    // ---- 执行 ----
     ex u_ex (
         .fun3_i      (ex_fun3),
         .inst_addr_i (ex_inst_addr),
@@ -176,13 +181,24 @@ module top(
         .rd_addr_i   (ex_rd_addr),
         .gpr_wen_i   (ex_gpr_wen),
         .alu_ctrl_i  (ex_alu_ctrl),
+
+        .alu_ctrl_o  (ex_alu_ctrl_o),
+        .alu_op1_o   (ex_alu_op1_o),
+        .alu_op2_o   (ex_alu_op2_o),
+        .alu_out_i   (alu_out),
+
         .rd_addr_o   (wb_rd_addr),
         .rd_wdata_o  (wb_rd_wdata),
         .gpr_wen_o   (wb_gpr_wen),
         .jump_pc_o   (jump_pc),
         .jump_en_o   (jump_en),
         .flush_en_o  (flush_en)
-
     );
 
+    ALU u_alu (
+        .alu_ctrl_i (ex_alu_ctrl_o),
+        .op1_i      (ex_alu_op1_o),
+        .op2_i      (ex_alu_op2_o),
+        .alu_out_o  (alu_out)
+    );
 endmodule

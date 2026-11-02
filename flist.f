@@ -9,6 +9,7 @@
 ./rtl/id.v
 ./rtl/id_ex.v
 ./rtl/ex.v
+./rtl/ALU.v
 ./rtl/top.v
 ./rtl/ROM_inst.v
 ./rtl/riscv_top.v
