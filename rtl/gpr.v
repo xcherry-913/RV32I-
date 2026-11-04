@@ -10,7 +10,7 @@ module gpr(
     output [31:0] rs1_data_o,
     output [31:0] rs2_data_o,
 
-    //from ex (for write back)
+    //from wb
     input [4:0] rd_addr_i,
     input [31:0] rd_wdata_i,
     input wen
@@ -35,9 +35,8 @@ module gpr(
                 gpr[i] <= 32'b0;
             end
         end else begin
-            if(rd_addr_i != 5'b0)
-                gpr[rd_addr_i] <= wen ? rd_wdata_i : gpr[rd_addr_i];
-            else gpr[rd_addr_i] <= 32'b0;
+            if(rd_addr_i != 5'b0 && wen)
+                 gpr[rd_addr_i] <= rd_wdata_i;
         end
     end
 endmodule

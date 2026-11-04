@@ -10,8 +10,12 @@
 ./rtl/id_ex.v
 ./rtl/ex.v
 ./rtl/ALU.v
-./rtl/top.v
+./rtl/ex_ram.v
+./rtl/RAM.v
+./rtl/ram_wb.v
+./rtl/wb.v
 ./rtl/ROM_inst.v
+./rtl/top.v
 ./rtl/riscv_top.v
 
 

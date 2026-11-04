@@ -5,7 +5,8 @@ module id(
     input [31:0] inst_addr_i,
     input [31:0] inst_i,
 
-    //to gpr
+    //to gpr 
+    //补充：to id_ex；原因：便于数据前递
     output  [4:0] rs1_addr_o,
     output  [4:0] rs2_addr_o,
 
@@ -23,8 +24,13 @@ module id(
     output reg [3:0] alu_ctrl,
     output reg  mem_read,   
     output reg  mem_write,
-    output reg  [1:0] wb_sel,
-    output reg  [31:0] imm_o
+    output reg  wb_sel,
+    output reg  [31:0] imm_o,
+
+    //补充:to id_ex，做数据前递选择
+    output reg  rs1_used_o,   
+    output reg  rs2_used_o
+
 );
 
     assign inst_addr_o = inst_addr_i;
@@ -76,12 +82,15 @@ module id(
         alu_ctrl = 4'b0;
         mem_read = 1'b0;
         mem_write = 1'b0;
-        wb_sel = 2'b0;
+        wb_sel = 1'b0;
         imm_o = 32'b0;
+
+        rs1_used_o = 1'b0;
+        rs2_used_o = 1'b0;
         case(opcode)
             //I型指令
             `INST_TYPE_I : begin
-                op1_o = rs1_data_i;
+                op1_o = rs1_data_i;rs1_used_o = 1'b1;
                 op2_o = imm_I;
                 gpr_wen = 1'b1;
                 wb_sel = `WB_ALU;
@@ -99,16 +108,18 @@ module id(
                         op2_o = 32'b0;
                         gpr_wen = 1'b0;  
                         alu_ctrl = 4'b0;   
-                        wb_sel = 2'b0;     
-                        imm_o = 32'b0;             
+                        wb_sel = 1'b0;     
+                        imm_o = 32'b0;  
+                        rs1_used_o = 1'b0;
+                        rs2_used_o = 1'b0;           
                     end
                 endcase
             end
 
             //R型指令
             `INST_TYPE_R_M:begin
-                op1_o = rs1_data_i;
-                op2_o = rs2_data_i;
+                op1_o = rs1_data_i;rs1_used_o = 1'b1;
+                op2_o = rs2_data_i;rs2_used_o = 1'b1;
                 gpr_wen = 1'b1;
                 wb_sel = `WB_ALU;  
                 case (fun3)
@@ -137,8 +148,8 @@ module id(
                 //所有的B型指令都是一样的译码输出，不需要case
                 //区分放在ex模块，根据fun3的3位做不同选择
                     // `INST_BEQ,`INST_BNE:begin
-                    op1_o = rs1_data_i;
-                    op2_o = rs2_data_i;
+                    op1_o = rs1_data_i;rs1_used_o = 1'b1;
+                    op2_o = rs2_data_i;rs2_used_o = 1'b1;
                     alu_ctrl = `ALU_CMP;     
                     imm_o = imm_B;                     
             end
@@ -152,7 +163,7 @@ module id(
             end
             //JALR指令
             `INST_JALR:begin 
-                op1_o = rs1_data_i;
+                op1_o = rs1_data_i;rs1_used_o = 1'b1;
                 op2_o = imm_I;
                 gpr_wen = 1'b1;  
                 alu_ctrl = `ALU_JALR;   
@@ -174,20 +185,39 @@ module id(
                 wb_sel = `WB_ALU;                  
             end
 
+            //存储指令
+            `INST_TYPE_S:begin
+                op1_o = rs1_data_i;rs1_used_o = 1'b1;
+                op2_o = rs2_data_i;rs2_used_o = 1'b1;
+                alu_ctrl = `ALU_STR;
+                mem_write = 1'b1;
+                wb_sel = `WB_MEM;
+                imm_o = imm_S;
+            end
+
+            //加载指令
+            `INST_TYPE_L:begin
+                op1_o = rs1_data_i;rs1_used_o = 1'b1;
+                op2_o = imm_I;
+                alu_ctrl = `ALU_ADD;
+                mem_read = 1'b1;
+                wb_sel = `WB_MEM;
+                gpr_wen = 1'b1;
+            end
+
             default :begin
-                        op1_o = 32'b0;
-                        op2_o = 32'b0;
-                        gpr_wen = 1'b0;  
-                        alu_ctrl = 4'b0;
-                        mem_read = 1'b0;
-                        mem_write = 1'b0;
-                        wb_sel = 2'b0;
-                        imm_o = 32'b0;
+                op1_o = 32'b0;
+                op2_o = 32'b0;
+                gpr_wen = 1'b0;  
+                alu_ctrl = 4'b0;
+                mem_read = 1'b0;
+                mem_write = 1'b0;
+                wb_sel = 1'b0;
+                imm_o = 32'b0;
+                rs1_used_o = 1'b0;
+                rs2_used_o = 1'b0;
             end
         endcase
     end
-
-
-
 
 endmodule

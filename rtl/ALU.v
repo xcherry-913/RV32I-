@@ -11,7 +11,7 @@ module ALU(
    always @(*) begin
     alu_out_o = 32'b0;
     case(alu_ctrl_i)
-        `ALU_AUIPC,`ALU_JAL,`ALU_CMP,`ALU_ADD:
+        `ALU_AUIPC,`ALU_JAL,`ALU_CMP,`ALU_ADD,`ALU_STR:
                  alu_out_o = op1_i + op2_i;
         `ALU_SUB:alu_out_o = op1_i - op2_i;
         `ALU_AND:alu_out_o = op1_i & op2_i;

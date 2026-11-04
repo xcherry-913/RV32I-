@@ -84,12 +84,12 @@
 
 `define ALU_CMP    4'd10
 `define ALU_JAL    4'd11
-`define ALU_JALR    4'd12
+`define ALU_JALR   4'd12
 `define ALU_LUI    4'd13
-`define ALU_AUIPC    4'd14
+`define ALU_AUIPC  4'd14
+`define ALU_STR    4'd15
 
 
 //WB SEL
-`define WB_ALU  2'b00
-`define WB_MEM  2'b01
-`define WB_PC4  2'b10
+`define WB_ALU  1'b0
+`define WB_MEM  1'b1

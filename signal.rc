@@ -1,0 +1,63 @@
+Magic 271485
+Revision Verdi_V-2023.12-SP2
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 0 25 1268 581 223 126
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/mnt/d/UESTC/Graduate1/RISCV/risc_v_project/phase1/tb_top.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+; waveform viewport range
+zoom 0.000000 158291.379310
+cursor 90000.000000
+marker 0.000000
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 0
+; marker line index
+markerPos 9
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+addGroup "G1"
+activeDirFile "" "/mnt/d/UESTC/Graduate1/RISCV/risc_v_project/phase1/tb_top.fsdb"
+addSignal -h 15 -UNSIGNED -HEX /tb_top/u_riscv_top/u_top/u_ifetch/inst_o[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope pc_i[31:0]
+addSignal -h 15 -UNSIGNED -HEX /tb_top/u_riscv_top/u_top/u_id_ex/op1_o[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope op2_o[31:0]
+addSignal -h 15 -UNSIGNED -HEX /tb_top/u_riscv_top/u_top/u_ex/rd_addr_o[4:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope rd_wdata_o[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope jump_pc_o[31:0]
+addSignal -h 15 -holdScope jump_en_o
+addSignal -h 15 -UNSIGNED -UDEC /tb_top/u_riscv_top/u_top/u_id/imm_J[31:0]
+addGroup "G2"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+

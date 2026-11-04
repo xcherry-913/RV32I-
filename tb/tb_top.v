@@ -44,7 +44,7 @@ initial begin
     //     $display("%0t,这是第%d个时钟周期",$time,clk_cnt);
     // end   
     wait(s10);
-    #100;
+    #20;
     if(s11)begin
         $display("==========================");
         $display("PASS");
@@ -57,7 +57,7 @@ initial begin
 end
 
 initial begin
-    #100000;
+    #10000;
     $finish;
 end
 
