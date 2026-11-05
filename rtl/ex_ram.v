@@ -13,10 +13,13 @@ module ex_ram(
     input  [31:0] mem_waddr_i,
     input  [31:0] mem_raddr_i,
 
+    //to ram_wb
     output  reg [4:0] rd_addr_o,
     output  reg [31:0] rd_wdata_EX_o,
     output  reg gpr_wen_o,
     output  reg wb_sel_o,
+
+    //to RAM
     output  reg mem_read_o,   
     output  reg mem_write_o,
     output  reg [2:0] fun3_o,

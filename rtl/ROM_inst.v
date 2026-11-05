@@ -5,7 +5,7 @@ module ROM_inst(
     //to riscv_top
     output [31:0] rom_inst_o
 );
-    reg [31:0] mem [0:1023];
+    reg [31:0] mem [0:4095];
 
     assign rom_inst_o = mem[rom_addr_i];
 endmodule

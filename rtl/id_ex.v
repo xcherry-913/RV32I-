@@ -13,11 +13,13 @@ module id_ex(
     input mem_write_i,
     input wb_sel_i,
     input [31:0] imm_i,
-    input flush_en_i,
     input  [4:0] rs1_addr_i,
     input  [4:0] rs2_addr_i,
     input  rs1_used_i,   
     input  rs2_used_i,
+
+    input load_use_stall_i,
+    input flush_en_i,
 
 
     output reg [2:0] fun3_o,
@@ -37,7 +39,7 @@ module id_ex(
     output reg  rs2_used_o
 );
    always @(posedge clk,negedge rstn) begin
-        if(!rstn || flush_en_i)begin
+        if(!rstn || flush_en_i || load_use_stall_i)begin
             fun3_o <= 3'b0;
             inst_addr_o <= 32'b0;
             op1_o <= 32'b0;

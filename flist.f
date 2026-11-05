@@ -7,6 +7,7 @@
 ./rtl/if_id.v
 ./rtl/gpr.v
 ./rtl/id.v
+./rtl/hazard_unit.v
 ./rtl/id_ex.v
 ./rtl/ex.v
 ./rtl/ALU.v
@@ -19,4 +20,4 @@
 ./rtl/riscv_top.v
 
 
-./tb/tb_top.v
+./tb/tb_top.sv

@@ -15,21 +15,12 @@ module RAM(
     input  [31:0] mem_raddr,
 
 
-    //to WB(directly)
-    output reg [31:0] mem_rdata,
+    //to WB
+    output reg [31:0] mem_rdata
 
-    //to WB(reg)
-    output  [4:0] rd_addr_o,
-    output  [31:0] rd_wdata_EX_o,
-    output  gpr_wen_o,
-    output  wb_sel_o
 );
-    assign rd_addr_o = rd_addr_i;
-    assign rd_wdata_EX_o = rd_wdata_EX_i;
-    assign gpr_wen_o = gpr_wen_i;
-    assign wb_sel_o = wb_sel_i;
 
-    localparam DEPTH = 1024;
+    localparam DEPTH = 4096;
     reg [31:0] mem [0:DEPTH-1];
 
     wire [29:0] waddr = mem_waddr[31:2];
@@ -37,9 +28,8 @@ module RAM(
     wire [1:0]  wsel  = mem_waddr[1:0];
     wire [1:0]  rsel  = mem_raddr[1:0];
 
-    // 读侧先取出字节/半字，便于符号扩展
     wire [7:0]  rbyte = mem[raddr][8*rsel  +: 8];
-    wire [15:0] rhalf = mem[raddr][16*rsel +: 16];
+    wire [15:0] rhalf = mem[raddr][16*rsel[1] +: 16];
 
     integer i;
     always @(posedge clk, negedge rstn) begin
@@ -52,7 +42,7 @@ module RAM(
                 case (fun3_i)
                 //依次：SB SH SW
                 3'h0: mem[waddr][8*wsel  +: 8]   <= mem_wdata[7:0];    
-                3'h1: mem[waddr][16*wsel +: 16] <= mem_wdata[15:0];
+                3'h1: mem[waddr][16*wsel[1] +: 16] <= mem_wdata[15:0];//2字节对齐，wsel[0]始终为0
                 3'h2: mem[waddr] <= mem_wdata;         
                 endcase
             end else if (mem_read_i) begin

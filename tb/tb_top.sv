@@ -1,33 +1,43 @@
 
 module tb_top();
 
-
 wire [31:0] gp  = u_riscv_top.u_top.u_gpr.gpr[3];
 wire [31:0] s10 = u_riscv_top.u_top.u_gpr.gpr[26];
 wire [31:0] s11 = u_riscv_top.u_top.u_gpr.gpr[27];
 
 
 
-reg clk = 1,rstn = 0;
-reg [31:0] clk_cnt = 0;
+logic clk = 1,rstn = 0;
+logic [31:0] clk_cnt = 0;
 
 always #5 clk = ~clk;
 
-initial begin
-    rstn = 0;
-    #11
-    rstn = 1;
-end
 riscv_top u_riscv_top(
     .clk  (clk  ),
     .rstn (rstn )
 );
 
-//设置ROM上电初始值
-initial begin
-    $readmemh("./inst_txt/rv32ui-p-jal.txt",u_riscv_top.u_ROM_inst.mem);
-end
+//设置ROM和RAM的上电初始值
+string rom_file;
 
+initial begin
+    rstn = 0;
+
+    if (!$value$plusargs("TEST=%s", rom_file))
+        $fatal();
+
+    $display("=============================================");    
+    $display("TEST=%s", rom_file);
+    $display("=============================================");
+
+    $readmemh(rom_file, u_riscv_top.u_ROM_inst.mem);
+
+
+    repeat (2) @(posedge clk);
+    @(negedge clk);
+    rstn = 1;
+    $readmemh(rom_file, u_riscv_top.u_top.u_ram.mem);
+end
 //测试寄存器数值
 initial begin
     
@@ -49,20 +59,24 @@ initial begin
         $display("==========================");
         $display("PASS");
         $display("==========================");
+        $finish;
     end else begin
         $display("==========================");
         $display("FAIL");
-        $display("==========================");        
+        $display("==========================");    
+        $fatal();    
     end
 end
 
 initial begin
     #10000;
-    $finish;
+    $fatal(1, "FAIL:TIMEOUT");
 end
 
+string WAVE;
 initial begin
-    $fsdbDumpfile("tb_top.fsdb");
+    if(!$value$plusargs("WAVE=%s",WAVE)) WAVE = "tb_top.fsdb";
+    $fsdbDumpfile(WAVE);
     $fsdbDumpvars(0,tb_top);
 end
 endmodule

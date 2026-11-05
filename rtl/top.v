@@ -1,5 +1,3 @@
-// 流水线顶层，未与ROM连接
-`include "defines.v"
 module top(
     input clk,
     input rstn,
@@ -10,6 +8,9 @@ module top(
     //from ROM
     input  [31:0] rom_inst_i
 );
+
+    //load use stall
+    wire load_use_stall;
 
     wire [31:0] pc;
 
@@ -82,13 +83,19 @@ module top(
     wire [31:0] ex_alu_op2_o;
     wire [31:0] alu_out;
 
-    //EX_RAM 流水线寄存器（MEM 阶段输出）
+    //EX_RAM
     wire [4:0]  mem_rd_addr;
     wire [31:0] mem_rd_wdata_EX;
     wire        mem_gpr_wen;
     wire        mem_wb_sel;
+    wire        mem_read;
+    wire        mem_write;
+    wire [2:0]  mem_fun3;
+    wire [31:0] mem_store_data;
+    wire [31:0] mem_write_addr;
+    wire [31:0] mem_read_addr;
 
-    //EX_RAM 前递输出（回到 EX 级）
+    //EX_RAM前递
     wire [31:0] EX_RAM_rd_wdata;
     wire [4:0]  EX_RAM_rd_addr;
     wire        EX_RAM_mem_read;
@@ -97,30 +104,30 @@ module top(
     //RAM
     wire [31:0] ram_rdata;
 
-    //RAM_WB 流水线寄存器（WB 阶段输出）
+    //RAM_WB
     wire [4:0]  wb_rd_addr;
     wire [31:0] wb_rd_wdata_EX;
     wire        wb_gpr_wen;
     wire        wb_sel;
 
-    //ram_wb 前递输出（回到 EX 级）
     wire [4:0]  WB_rd_addr;
     wire        WB_gpr_wen;
 
-    //WB 最终写回
+    //WB
     wire [4:0]  wb_rd_addr_final;
     wire [31:0] wb_rd_wdata_final;
     wire        wb_gpr_wen_final;
     wire [31:0] WB_wdata;
 
     //=======================================
-    // 第一级流水：IF
+    //第一级流水：IF
     //=======================================
     pc_reg u_pc_reg (
         .clk       (clk),
         .rstn      (rstn),
         .jump_en_i (jump_en),
         .jump_pc_i (jump_pc),
+        .load_use_stall_i(load_use_stall),
         .pc_o      (pc)
     );
 
@@ -136,6 +143,8 @@ module top(
         .clk         (clk),
         .rstn        (rstn),
         .flush_en_i  (flush_en),
+        .load_use_stall_i(load_use_stall),
+
         .inst_i      (if_inst),
         .inst_addr_i (if_inst_addr),
         .inst_o      (if_id_inst),
@@ -143,7 +152,7 @@ module top(
     );
 
     //=======================================
-    // 第二级流水：ID + GPR
+    //第二级流水：ID + GPR
     //=======================================
     id u_id (
         .inst_addr_i (if_id_inst_addr),
@@ -184,11 +193,21 @@ module top(
         .rd_wdata_i (wb_rd_wdata_final),
         .wen        (wb_gpr_wen_final)
     );
-
+    hazard_unit u_hazard_unit(
+        .id_rs1_addr_i  (id_rs1_addr  ),
+        .id_rs2_addr_i  (id_rs2_addr  ),
+        .ex_rd_addr_i   (ex_rd_addr   ),
+        .ex_mem_read_i  (ex_mem_read  ),
+        .rs1_used_i     (ex_rs1_used     ),
+        .rs2_used_i     (ex_rs2_used     ),
+        .load_use_stall (load_use_stall )
+    );
+    
     id_ex u_id_ex (
         .clk         (clk),
         .rstn        (rstn),
         .flush_en_i  (flush_en),
+        .load_use_stall_i(load_use_stall),
 
         .fun3_i      (id_fun3),
         .inst_addr_i (id_inst_addr),
@@ -227,7 +246,7 @@ module top(
     );
 
     //=======================================
-    // 第三级流水：EX + ALU
+    //第三级流水：EX + ALU
     //=======================================
     ex u_ex (
         .fun3_i      (ex_fun3),
@@ -247,7 +266,7 @@ module top(
         .rs1_addr_i  (ex_rs1_addr),
         .rs2_addr_i  (ex_rs2_addr),
 
-        //★ 数据前递：来自 EX_RAM（MEM 级）与 WB（写回级）
+        //数据前递：来自 EX_RAM、RAM_WB和WB
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
@@ -255,6 +274,7 @@ module top(
 
         .WB_rd_addr      (WB_rd_addr),
         .WB_gpr_wen      (WB_gpr_wen),
+
         .WB_wdata        (WB_wdata),
 
         .alu_ctrl_o  (ex_alu_ctrl_o),
@@ -286,9 +306,7 @@ module top(
         .alu_out_o  (alu_out)
     );
 
-    //=======================================
-    // 第四级流水：EX_RAM 流水线寄存器（并产生前递信息）
-    //=======================================
+
     ex_ram u_ex_ram (
         .clk          (clk),
         .rstn         (rstn),
@@ -310,71 +328,63 @@ module top(
         .gpr_wen_o    (mem_gpr_wen),
         .wb_sel_o     (mem_wb_sel),
 
-        .mem_read_o   (),
-        .mem_write_o  (),
-        .fun3_o       (),
-        .mem_wdata_o  (),
-        .mem_waddr_o  (),
-        .mem_raddr_o  (),
+        .mem_read_o   (mem_read),
+        .mem_write_o  (mem_write),
+        .fun3_o       (mem_fun3),
+        .mem_wdata_o  (mem_store_data),
+        .mem_waddr_o  (mem_write_addr),
+        .mem_raddr_o  (mem_read_addr),
 
-        //★ 前递信息回 EX 级
+        //前递给EX
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
         .EX_RAM_gpr_wen  (EX_RAM_gpr_wen)
     );
 
-    //=======================================
-    // RAM（同步访问，同时输出给 WB）
-    //=======================================
     RAM u_ram (
         .clk           (clk),
         .rstn          (rstn),
 
-        .rd_addr_i     (ex_rd_addr_o),
-        .rd_wdata_EX_i (ex_rd_wdata_o),
-        .gpr_wen_i     (ex_gpr_wen_o),
-        .wb_sel_i      (ex_wb_sel_o),
+        .rd_addr_i     (mem_rd_addr),
+        .rd_wdata_EX_i (mem_rd_wdata_EX),
+        .gpr_wen_i     (mem_gpr_wen),
+        .wb_sel_i      (mem_wb_sel),
 
-        .mem_read_i    (ex_mem_read_o),
-        .mem_write_i   (ex_mem_write_o),
-        .fun3_i        (ex_fun3_o),
-        .mem_wdata     (ex_mem_wdata_o),
-        .mem_waddr     (ex_mem_waddr_o),
-        .mem_raddr     (ex_mem_raddr_o),
+        .mem_read_i    (mem_read),
+        .mem_write_i   (mem_write),
+        .fun3_i        (mem_fun3),
+        .mem_wdata     (mem_store_data),
+        .mem_waddr     (mem_write_addr),
+        .mem_raddr     (mem_read_addr),
 
-        .mem_rdata     (ram_rdata),
-
-        .rd_addr_o     (),
-        .rd_wdata_EX_o (),
-        .gpr_wen_o     (),
-        .wb_sel_o      ()
+        .mem_rdata     (ram_rdata)
     );
 
     //=======================================
-    // 第五级流水：RAM_WB 流水线寄存器（并产生前递信息）
+    //第四级流水：RAM_WB
     //=======================================
     ram_wb u_ram_wb (
         .clk          (clk),
         .rstn         (rstn),
 
-        .rd_addr_i    (ex_rd_addr_o),
-        .rd_wdata_EX_i(ex_rd_wdata_o),
-        .gpr_wen_i    (ex_gpr_wen_o),
-        .wb_sel_i     (ex_wb_sel_o),
+        .rd_addr_i    (mem_rd_addr),
+        .rd_wdata_EX_i(mem_rd_wdata_EX),
+        .gpr_wen_i    (mem_gpr_wen),
+        .wb_sel_i     (mem_wb_sel),
 
         .rd_addr_o    (wb_rd_addr),
         .rd_wdata_EX_o(wb_rd_wdata_EX),
         .gpr_wen_o    (wb_gpr_wen),
         .wb_sel_o     (wb_sel),
 
-        //★ 前递信息回 EX 级
+        //前递给EX
         .WB_rd_addr   (WB_rd_addr),
         .WB_gpr_wen   (WB_gpr_wen)
     );
 
     //=======================================
-    // WB 级写回
+    //第五级流水：WB+GPR写
     //=======================================
     wb u_wb (
         .rd_addr_i      (wb_rd_addr),
@@ -387,6 +397,7 @@ module top(
         .rd_wdata_o     (wb_rd_wdata_final),
         .rd_addr_o      (wb_rd_addr_final),
 
+        //前递给EX
         .WB_wdata       (WB_wdata)
     );
 
