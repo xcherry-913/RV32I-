@@ -15,3 +15,5 @@ verdi_config_file
 sim
 log
 waves
+tools
+*.docx

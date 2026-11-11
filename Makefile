@@ -4,7 +4,7 @@ clean:
 com: clean
 	vcs -full64 -sverilog +v2k +lint=TFIPC-L -debug_access+all -f flist.f
 
-TEST ?= inst_txt/rv32ui-p-sh.txt
+TEST ?= inst_txt/rv32ui-p-add.txt
 NAME := $(notdir $(basename $(TEST)))
 sim_signle: com
 	./simv +TEST="$(TEST)" \

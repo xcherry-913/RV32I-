@@ -3,13 +3,13 @@ module hazard_unit(
     input [4:0] id_rs1_addr_i,
     input [4:0] id_rs2_addr_i,
 
-    //from id_ex or ex
+    //from id_ex
     input [4:0] ex_rd_addr_i,
     input ex_mem_read_i,
     input rs1_used_i,
     input rs2_used_i,
 
-    //to id_ex 
+    //to id_ex for reset, to pc_reg and if_id for stall
     output load_use_stall
 );
   wire rs1_same_rd ;

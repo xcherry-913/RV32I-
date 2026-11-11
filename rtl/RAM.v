@@ -1,4 +1,5 @@
 // simple dual port ram
+// 基地址：0x1000
 module RAM(
     input clk,
     input rstn,
@@ -19,30 +20,29 @@ module RAM(
     output reg [31:0] mem_rdata
 
 );
+    reg  [31:0] mem [0:511];
+    wire [31:0]ram_base_addr = 32'h1000;
 
-    localparam DEPTH = 4096;
-    reg [31:0] mem [0:DEPTH-1];
-
-    wire [29:0] waddr = mem_waddr[31:2];
-    wire [29:0] raddr = mem_raddr[31:2];
-    wire [1:0]  wsel  = mem_waddr[1:0];
-    wire [1:0]  rsel  = mem_raddr[1:0];
+    wire [8:0] waddr = (mem_waddr-ram_base_addr)>>2;
+    wire [8:0] raddr = (mem_raddr-ram_base_addr)>>2;
+    wire [1:0] wsel  = mem_waddr[1:0];
+    wire [1:0] rsel  = mem_raddr[1:0];
 
     wire [7:0]  rbyte = mem[raddr][8*rsel  +: 8];
     wire [15:0] rhalf = mem[raddr][16*rsel[1] +: 16];
 
-    integer i;
+    //integer i;
     always @(posedge clk, negedge rstn) begin
         if (!rstn) begin
             mem_rdata <= 32'b0;
-            for (i=0;i<DEPTH;i=i+1)
-                mem[i] <= 32'b0;
+            //for (i=0;i<512;i=i+1)
+                //mem[i] <= 32'b0;
         end else begin
             if (mem_write_i) begin
                 case (fun3_i)
                 //依次：SB SH SW
                 3'h0: mem[waddr][8*wsel  +: 8]   <= mem_wdata[7:0];    
-                3'h1: mem[waddr][16*wsel[1] +: 16] <= mem_wdata[15:0];//2字节对齐，wsel[0]始终为0
+                3'h1: mem[waddr][16*wsel[1] +: 16] <= mem_wdata[15:0];//2字节对齐
                 3'h2: mem[waddr] <= mem_wdata;         
                 endcase
             end else if (mem_read_i) begin

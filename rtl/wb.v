@@ -15,11 +15,20 @@ module wb(
     output [4:0] rd_addr_o,
 
     //to ex(forward)
-    output [31:0] WB_wdata
+    output [31:0] WB_wdata,
+    
+    //for vivado debug
+    output debug_gpr_wen_o,
+    output [31:0] debug_rd_wdata_o,
+    output [4:0] debug_rd_addr_o
 
 );
     assign gpr_wen_o = gpr_wen_i;
     assign rd_addr_o = rd_addr_i;
     assign rd_wdata_o = (wb_sel_i == `WB_ALU) ? rd_wdata_EX_i : mem_rdata;
     assign WB_wdata = rd_wdata_o;
+    
+    assign debug_gpr_wen_o = gpr_wen_i;
+    assign debug_rd_addr_o = rd_addr_i;
+    assign debug_rd_wdata_o = rd_wdata_o;
 endmodule

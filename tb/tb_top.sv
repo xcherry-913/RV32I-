@@ -17,7 +17,7 @@ riscv_top u_riscv_top(
     .rstn (rstn )
 );
 
-//设置ROM和RAM的上电初始值
+//设置ROM和RAM的上电初始�??
 string rom_file;
 
 initial begin
@@ -32,13 +32,14 @@ initial begin
 
     $readmemh(rom_file, u_riscv_top.u_ROM_inst.mem);
 
-
-    repeat (2) @(posedge clk);
-    @(negedge clk);
-    rstn = 1;
     $readmemh(rom_file, u_riscv_top.u_top.u_ram.mem);
+    
+    repeat(2) @(posedge clk);
+    
+    @(negedge clk);rstn = 1;
+    
 end
-//测试寄存器数值
+//测试寄存器数�?
 initial begin
     
     $timeformat(-9,2,"ns",0);
@@ -51,7 +52,7 @@ initial begin
     // while (1) begin
     //     @(posedge clk); 
     //     clk_cnt = clk_cnt + 1;
-    //     $display("%0t,这是第%d个时钟周期",$time,clk_cnt);
+    //     $display("%0t,这是�?%d个时钟周�?",$time,clk_cnt);
     // end   
     wait(s10);
     #20;

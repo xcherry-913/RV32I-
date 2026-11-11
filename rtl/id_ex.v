@@ -39,7 +39,7 @@ module id_ex(
     output reg  rs2_used_o
 );
    always @(posedge clk,negedge rstn) begin
-        if(!rstn || flush_en_i || load_use_stall_i)begin
+        if(!rstn)begin
             fun3_o <= 3'b0;
             inst_addr_o <= 32'b0;
             op1_o <= 32'b0;
@@ -55,6 +55,22 @@ module id_ex(
             rs2_addr_o <= 5'b0;  
             rs1_used_o <= 1'b0;     
             rs2_used_o <= 1'b0;     
+        end else if (flush_en_i || load_use_stall_i) begin
+            fun3_o <= 3'b0;
+            inst_addr_o <= 32'b0;
+            op1_o <= 32'b0;
+            op2_o <= 32'b0;
+            rd_addr_o <= 5'b0;
+            gpr_wen_o <= 1'b0;
+            alu_ctrl_o <= 4'b0;
+            mem_read_o <= 1'b0;
+            mem_write_o <= 1'b0;
+            wb_sel_o <= 1'b0;  
+            imm_o <= 32'b0;   
+            rs1_addr_o <= 5'b0;       
+            rs2_addr_o <= 5'b0;  
+            rs1_used_o <= 1'b0;     
+            rs2_used_o <= 1'b0;           
         end else begin
             fun3_o <= fun3_i;
             inst_addr_o <= inst_addr_i;
