@@ -39,7 +39,7 @@ module ex(
     //from ALU
     input [31:0] alu_out_i,
 
-    //to pc/id_ex/if_id
+    //to pc,id_ex and if_id
     output [31:0] jump_pc_o,
     output reg jump_en_o,
     output flush_en_o,

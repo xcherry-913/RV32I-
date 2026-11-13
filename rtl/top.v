@@ -100,7 +100,7 @@ module top(
     wire [31:0] mem_write_addr;
     wire [31:0] mem_read_addr;
 
-    //EX_RAM前�??
+    //EX_RAM前�??
     wire [31:0] EX_RAM_rd_wdata;
     wire [4:0]  EX_RAM_rd_addr;
     wire        EX_RAM_mem_read;
@@ -226,7 +226,7 @@ module top(
         .wb_sel_i    (id_wb_sel),
         .imm_i       (id_imm),
 
-        //补充：用于数据前�?
+        //补充：用于数据前�?
         .rs1_addr_i  (id_rs1_addr),
         .rs2_addr_i  (id_rs2_addr),
         .rs1_used_i  (id_rs1_used),
@@ -271,7 +271,7 @@ module top(
         .rs1_addr_i  (ex_rs1_addr),
         .rs2_addr_i  (ex_rs2_addr),
 
-        //数据前�?�：来自 EX_RAM、RAM_WB和WB
+        //数据前�?�：来自 EX_RAM、RAM_WB和WB
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
@@ -340,7 +340,7 @@ module top(
         .mem_waddr_o  (mem_write_addr),
         .mem_raddr_o  (mem_read_addr),
 
-        //前�?�给EX
+        //前�?�给EX
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
@@ -350,11 +350,6 @@ module top(
     RAM u_ram (
         .clk           (clk),
         .rstn          (rstn),
-
-        .rd_addr_i     (mem_rd_addr),
-        .rd_wdata_EX_i (mem_rd_wdata_EX),
-        .gpr_wen_i     (mem_gpr_wen),
-        .wb_sel_i      (mem_wb_sel),
 
         .mem_read_i    (mem_read),
         .mem_write_i   (mem_write),
@@ -383,13 +378,13 @@ module top(
         .gpr_wen_o    (wb_gpr_wen),
         .wb_sel_o     (wb_sel),
 
-        //前�?�给EX
+        //前�?�给EX
         .WB_rd_addr   (WB_rd_addr),
         .WB_gpr_wen   (WB_gpr_wen)
     );
 
     //=======================================
-    //第五级流水：WB+GPR�?
+    //第五级流水：WB+GPR�?
     //=======================================
     wb u_wb (
         .rd_addr_i      (wb_rd_addr),
@@ -402,7 +397,7 @@ module top(
         .rd_wdata_o     (wb_rd_wdata_final),
         .rd_addr_o      (wb_rd_addr_final),
 
-        //前�?�给EX
+        //前�?�给EX
         .WB_wdata       (WB_wdata),
         
         .debug_gpr_wen_o (debug_gpr_wen_o),

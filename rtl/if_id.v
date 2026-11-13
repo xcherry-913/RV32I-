@@ -12,10 +12,14 @@ module if_id(
     output reg [31:0] inst_addr_o
 );
     always @(posedge clk ,negedge rstn) begin
-        if(!rstn || flush_en_i) begin
+        if(!rstn) begin
             inst_o <= `INST_NOP;
             inst_addr_o <= 32'b0;
-        end else if(load_use_stall_i)begin
+        end else if (flush_en_i) begin
+            inst_o <= `INST_NOP;
+            inst_addr_o <= 32'b0;            
+        end
+        else if(load_use_stall_i)begin
             // inst_addr_o <= inst_addr_o;
             // inst_o <= inst_o;        
         end else begin
