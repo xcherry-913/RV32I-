@@ -6,7 +6,12 @@ module riscv_top(
     //for  综合 
     output debug_gpr_wen,
     output [31:0] debug_rd_wdata,
-    output [4:0] debug_rd_addr
+    output [4:0] debug_rd_addr,
+
+    //for system interrupt
+   output interrupt_en_o,
+   output [31:0] interrupt_cause_o,
+   output [31:0] interrupt_pc_o
 );
     wire [31:0] rom_addr;
     wire [31:0] rom_inst;
@@ -17,13 +22,18 @@ ROM_inst u_ROM_inst(
 );
 
 top u_top(
-    .clk              (clk              ),
-    .rstn             (rstn             ),
-    .rom_addr_o       (rom_addr       ),
-    .rom_inst_i       (rom_inst       ),
-    .debug_gpr_wen_o  (debug_gpr_wen  ),
-    .debug_rd_wdata_o (debug_rd_wdata ),
-    .debug_rd_addr_o  (debug_rd_addr  )
+    .clk               (clk               ),
+    .rstn              (rstn              ),
+    .rom_addr_o        (rom_addr          ),
+    .rom_inst_i        (rom_inst          ),
+
+    .debug_gpr_wen_o   (debug_gpr_wen   ),
+    .debug_rd_wdata_o  (debug_rd_wdata  ),
+    .debug_rd_addr_o   (debug_rd_addr   ),
+
+    .interrupt_en_o    (interrupt_en_o    ),
+    .interrupt_cause_o (interrupt_cause_o ),
+    .interrupt_pc_o    (interrupt_pc_o    )
 );
 
 

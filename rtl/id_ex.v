@@ -15,11 +15,15 @@ module id_ex(
     input [31:0] imm_i,
     input  [4:0] rs1_addr_i,
     input  [4:0] rs2_addr_i,
+
     input  rs1_used_i,   
     input  rs2_used_i,
 
     input load_use_stall_i,
     input flush_en_i,
+
+    input interrupt_en_i,
+    input [31:0] interrupt_cause_i,
 
 
     output reg [2:0] fun3_o,
@@ -36,7 +40,9 @@ module id_ex(
     output reg  wb_sel_o,
     output reg  [31:0] imm_o,
     output reg  rs1_used_o,   
-    output reg  rs2_used_o
+    output reg  rs2_used_o,
+    output reg  interrupt_en_o,
+    output reg  [31:0] interrupt_cause_o
 );
    always @(posedge clk,negedge rstn) begin
         if(!rstn)begin
@@ -54,7 +60,9 @@ module id_ex(
             rs1_addr_o <= 5'b0;       
             rs2_addr_o <= 5'b0;  
             rs1_used_o <= 1'b0;     
-            rs2_used_o <= 1'b0;     
+            rs2_used_o <= 1'b0;  
+            interrupt_en_o <= 1'b0;   
+            interrupt_cause_o <= 32'b0;   
         end else if (flush_en_i || load_use_stall_i) begin
             fun3_o <= 3'b0;
             inst_addr_o <= 32'b0;
@@ -70,7 +78,9 @@ module id_ex(
             rs1_addr_o <= 5'b0;       
             rs2_addr_o <= 5'b0;  
             rs1_used_o <= 1'b0;     
-            rs2_used_o <= 1'b0;           
+            rs2_used_o <= 1'b0;     
+            interrupt_en_o <= 1'b0;   
+            interrupt_cause_o <= 32'b0;       
         end else begin
             fun3_o <= fun3_i;
             inst_addr_o <= inst_addr_i;
@@ -86,7 +96,9 @@ module id_ex(
             rs1_addr_o <= rs1_addr_i;
             rs2_addr_o <= rs2_addr_i;
             rs1_used_o <= rs1_used_i;     
-            rs2_used_o <= rs2_used_i;     
+            rs2_used_o <= rs2_used_i;
+            interrupt_en_o <= interrupt_en_i;   
+            interrupt_cause_o <= interrupt_cause_i;      
         end
    end 
 endmodule

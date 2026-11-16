@@ -18,6 +18,9 @@ module ex(
     input  [4:0] rs1_addr_i,
     input  [4:0] rs2_addr_i,
 
+    input interrupt_en_i,
+    input [31:0] interrupt_cause_i,
+
     //from ex_ram的数据前递
     input [31:0] EX_RAM_rd_wdata,
     input [4:0] EX_RAM_rd_addr,
@@ -41,7 +44,7 @@ module ex(
 
     //to pc,id_ex and if_id
     output [31:0] jump_pc_o,
-    output reg jump_en_o,
+    output jump_en_o,
     output flush_en_o,
 
     //to ex_ram
@@ -55,21 +58,22 @@ module ex(
     output [2:0] fun3_o,
     output [31:0] mem_wdata_o,
     output [31:0] mem_waddr_o,
-    output [31:0] mem_raddr_o
+    output [31:0] mem_raddr_o,
 
-    //from RAM
-    //input [31:0] mem_rdata_i
+    // to top output
+    output  interrupt_en_o,
+    output [31:0] interrupt_pc_o,
+    output [31:0] interrupt_cause_o
 
 );
+
     //EX的操作数选择
     reg [31:0] op1;
     reg [31:0] op2;
 
-    //wire rs1_same1 = (rs1_addr_i == EX_RAM_rd_addr) || (rs1_addr_i == WB_rd_addr);
-    //wire addr2_same = (rs2_addr_i == EX_RAM_rd_addr) || (rs2_addr_i == WB_rd_addr);
-
     always @(*) begin
         op1 = op1_i;
+        //解决需要访存和不需要访存的RAW冒险
         if(rs1_used_i && (rs1_addr_i == EX_RAM_rd_addr) && EX_RAM_gpr_wen && (EX_RAM_rd_addr != 0))begin
             if(!EX_RAM_mem_read) op1 = EX_RAM_rd_wdata;
         end else if(rs1_used_i && (rs1_addr_i == WB_rd_addr) && WB_gpr_wen && (WB_rd_addr != 0))//load use stall
@@ -125,8 +129,11 @@ module ex(
     assign op_lts = $signed(op1) < $signed(op2);
     assign op_ltu = op1 < op2;
 
-    assign jump_pc_o = jump_en_o ? alu_out_i : 32'b0;
-    assign flush_en_o = jump_en_o;
+    wire [31:0] branch_jump_pc;
+    reg branch_jump_en;
+    wire branch_flush_en;
+    assign branch_jump_pc = branch_jump_en ? alu_out_i : 32'b0;
+    assign branch_flush_en = branch_jump_en;
 
     always @(*) begin
         case(alu_ctrl_i)
@@ -134,34 +141,42 @@ module ex(
             case(fun3[2:1])                
                 2'b00:begin
                     //0:beq   1:bne
-                    jump_en_o = fun3[0] ? ~op_eq : op_eq;
+                    branch_jump_en = fun3[0] ? ~op_eq : op_eq;
                 end
 
                 2'b10:begin
                     //0:blt   1:bge
-                    jump_en_o = fun3[0] ? ~op_lts : op_lts;
+                    branch_jump_en = fun3[0] ? ~op_lts : op_lts;
                 end                
 
                 2'b11:begin
                     //0:bltu   1:bgeu
-                    jump_en_o = fun3[0] ? ~op_ltu : op_ltu;
+                    branch_jump_en = fun3[0] ? ~op_ltu : op_ltu;
                 end 
                  
                 default :begin
-                    jump_en_o = 1'b0;
+                    branch_jump_en = 1'b0;
                 end  
             endcase
         end
 
-        `ALU_JAL,`ALU_JALR:jump_en_o = 1'b1;
+        `ALU_JAL,`ALU_JALR:branch_jump_en = 1'b1;
 
-        default : jump_en_o = 1'b0;
+        default : branch_jump_en = 1'b0;
         endcase
     end
      
 
 
     //输出逻辑
+
+    assign jump_en_o = branch_jump_en || interrupt_en_i;
+    assign flush_en_o = branch_flush_en || interrupt_en_i;
+    assign jump_pc_o = interrupt_en_i ? `INTERRUPT_ENTRY  : branch_jump_pc;
+    assign interrupt_cause_o = interrupt_en_i ? interrupt_cause_i : 32'b0;
+    assign interrupt_pc_o = interrupt_en_i ? inst_addr_i : 32'b0;
+    assign interrupt_en_o = interrupt_en_i;
+
     assign mem_read_o = mem_read_i;
     assign mem_write_o = mem_write_i;
     assign mem_raddr_o = alu_out_i;
@@ -202,84 +217,3 @@ module ex(
 
 
 endmodule        
-//    always @(*) begin
-//     //默认赋值
-//     rd_addr_o = rd_addr_i;
-//     gpr_wen_o = gpr_wen_i;
-//     rd_wdata_o = 32'b0;
-//     jump_en_o = 1'b0;
-//     jump_pc_o = 32'b0;
-//     flush_en_o = 1'b0;
-//     case(alu_ctrl_i)
-//         `ALU_ADD:rd_wdata_o = op1_i + op2_i;
-//         `ALU_SUB:rd_wdata_o = op1_i - op2_i;
-//         `ALU_AND:rd_wdata_o = op1_i & op2_i;
-//         `ALU_OR :rd_wdata_o = op1_i | op2_i;
-//         `ALU_XOR:rd_wdata_o = op1_i ^ op2_i;
-//         `ALU_SLL:rd_wdata_o = op1_i << op2_i[4:0];
-//         `ALU_SRL:rd_wdata_o = op1_i >> op2_i[4:0];
-//         `ALU_SRA:rd_wdata_o = $signed(op1_i) >>> op2_i[4:0];
-//         `ALU_SLT:rd_wdata_o = ($signed(op1_i) < $signed(op2_i)) ? 32'd1 : 32'd0;
-//         `ALU_SLTU:rd_wdata_o = op1_i < op2_i ? 32'b1 : 32'b0;
-
-//         `ALU_CMP:begin
-//             case(fun3[2:1])
-//                 2'b00:begin
-//                     //0:beq   1:bne
-//                     jump_en_o = fun3[0] ? ~alu_eq : alu_eq;
-//                     jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
-//                     flush_en_o = jump_en_o;
-//                 end
-
-//                 2'b10:begin
-//                     //0:blt   1:bge
-//                     jump_en_o = fun3[0] ? ~alu_lts : alu_lts;
-//                     jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
-//                     flush_en_o = jump_en_o;
-//                 end                
-
-//                 2'b11:begin
-//                     //0:bltu   1:bgeu
-//                     jump_en_o = fun3[0] ? ~alu_ltu : alu_ltu;
-//                     jump_pc_o = jump_en_o ? inst_addr_i+imm_i : 32'b0;
-//                     flush_en_o = jump_en_o;
-//                 end                
-
-//                 default :begin
-//                     jump_en_o = 1'b0;
-//                     jump_pc_o = 32'b0;
-//                     flush_en_o = 1'b0;
-//                 end
-//             endcase
-//         end
-
-//         `ALU_JAL:begin
-//             jump_en_o = 1'b1;
-//             jump_pc_o = inst_addr_i+op1_i;
-//             flush_en_o = jump_en_o;
-//             rd_wdata_o = inst_addr_i + 4;
-//         end
-
-//         `ALU_JALR:begin
-//             jump_en_o = 1'b1;
-//             jump_pc_o = (op1_i+op2_i) & ~(32'b1);
-//             flush_en_o = jump_en_o;
-//             rd_wdata_o = inst_addr_i + 4;            
-//         end
-
-//         `ALU_LUI:begin
-//             rd_wdata_o = op1_i;
-//         end
-
-//         `ALU_AUIPC:begin
-//             rd_wdata_o = op1_i+inst_addr_i;
-//         end     
-
-//         default:begin
-//             rd_wdata_o = 32'b0;
-//             jump_en_o = 1'b0;
-//             jump_pc_o = 32'b0;
-//             flush_en_o = 1'b0;
-//         end
-//     endcase
-//    end 

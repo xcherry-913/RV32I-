@@ -2,12 +2,13 @@ module hazard_unit(
     //from id
     input [4:0] id_rs1_addr_i,
     input [4:0] id_rs2_addr_i,
-
-    //from id_ex
-    input [4:0] ex_rd_addr_i,
-    input ex_mem_read_i,
     input rs1_used_i,
     input rs2_used_i,
+    
+    //from ex
+    input [4:0] ex_rd_addr_i,
+    input ex_mem_read_i,
+
 
     //to id_ex for reset, to pc_reg and if_id for stall
     output load_use_stall
@@ -17,5 +18,5 @@ module hazard_unit(
   wire rs2_same_rd ;  
   assign rs2_same_rd= (id_rs2_addr_i == ex_rd_addr_i);
 
-  assign load_use_stall = (rs1_used_i || rs2_used_i) && (rs1_same_rd || rs2_same_rd) && (ex_mem_read_i) &&(ex_rd_addr_i !=0);
+  assign load_use_stall = (rs1_used_i && rs1_same_rd) || (rs2_used_i && rs2_same_rd) && (ex_mem_read_i) &&(ex_rd_addr_i !=0);
 endmodule

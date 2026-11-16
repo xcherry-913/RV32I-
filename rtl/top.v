@@ -11,7 +11,12 @@ module top(
     //for vivado debug
    output debug_gpr_wen_o,
    output [31:0] debug_rd_wdata_o,
-   output [4:0] debug_rd_addr_o
+   output [4:0] debug_rd_addr_o,
+
+   //for system interrupt
+   output interrupt_en_o,
+   output [31:0] interrupt_cause_o,
+   output [31:0] interrupt_pc_o
 );
 
     //load use stall
@@ -43,6 +48,8 @@ module top(
     wire        id_wb_sel;
     wire        id_rs1_used;
     wire        id_rs2_used;
+    wire        id_interrupt_en;
+    wire [31:0] id_interrupt_cause;
 
     //GPR
     wire [31:0] gpr_rs1_data;
@@ -64,6 +71,8 @@ module top(
     wire [4:0]  ex_rs2_addr;
     wire        ex_rs1_used;
     wire        ex_rs2_used;
+    wire        ex_interrupt_en;
+    wire [31:0] ex_interrupt_cause;
 
     //EX
     wire [4:0]  ex_rd_addr_o;
@@ -78,6 +87,7 @@ module top(
     wire        ex_mem_read_o;
     wire        ex_mem_write_o;
 
+
     wire        flush_en;
     wire        jump_en;
     wire [31:0] jump_pc;
@@ -87,6 +97,11 @@ module top(
     wire [31:0] ex_alu_op1_o;
     wire [31:0] ex_alu_op2_o;
     wire [31:0] alu_out;
+
+    //EX <-> TOP
+    wire        ex_interrupt_en_o;
+    wire [31:0] ex_interrupt_cause_o;    
+    wire [31:0] ex_interrupt_pc_o;    
 
     //EX_RAM
     wire [4:0]  mem_rd_addr;
@@ -100,7 +115,7 @@ module top(
     wire [31:0] mem_write_addr;
     wire [31:0] mem_read_addr;
 
-    //EX_RAM前�??
+    //EX_RAM前递
     wire [31:0] EX_RAM_rd_wdata;
     wire [4:0]  EX_RAM_rd_addr;
     wire        EX_RAM_mem_read;
@@ -182,7 +197,10 @@ module top(
         .imm_o       (id_imm),
 
         .rs1_used_o  (id_rs1_used),
-        .rs2_used_o  (id_rs2_used)
+        .rs2_used_o  (id_rs2_used),
+
+        .interrupt_en_o (id_interrupt_en),
+        .interrupt_cause_o (id_interrupt_cause)
     );
 
     gpr u_gpr (
@@ -199,12 +217,16 @@ module top(
         .wen        (wb_gpr_wen_final)
     );
     hazard_unit u_hazard_unit(
+        // from id
         .id_rs1_addr_i  (id_rs1_addr  ),
         .id_rs2_addr_i  (id_rs2_addr  ),
-        .ex_rd_addr_i   (ex_rd_addr   ),
-        .ex_mem_read_i  (ex_mem_read  ),
         .rs1_used_i     (id_rs1_used     ),
         .rs2_used_i     (id_rs2_used     ),
+
+        //from ex
+        .ex_rd_addr_i   (ex_rd_addr   ),
+        .ex_mem_read_i  (ex_mem_read  ),
+
         .load_use_stall (load_use_stall )
     );
     
@@ -225,8 +247,9 @@ module top(
         .mem_write_i (id_mem_write),
         .wb_sel_i    (id_wb_sel),
         .imm_i       (id_imm),
+        .interrupt_en_i(id_interrupt_en),
+        .interrupt_cause_i(id_interrupt_cause),
 
-        //补充：用于数据前�?
         .rs1_addr_i  (id_rs1_addr),
         .rs2_addr_i  (id_rs2_addr),
         .rs1_used_i  (id_rs1_used),
@@ -247,7 +270,10 @@ module top(
         .rs1_addr_o  (ex_rs1_addr),
         .rs2_addr_o  (ex_rs2_addr),
         .rs1_used_o  (ex_rs1_used),
-        .rs2_used_o  (ex_rs2_used)
+        .rs2_used_o  (ex_rs2_used),
+
+        .interrupt_en_o(ex_interrupt_en),
+        .interrupt_cause_o(ex_interrupt_cause)
     );
 
     //=======================================
@@ -271,7 +297,10 @@ module top(
         .rs1_addr_i  (ex_rs1_addr),
         .rs2_addr_i  (ex_rs2_addr),
 
-        //数据前�?�：来自 EX_RAM、RAM_WB和WB
+        .interrupt_en_i(ex_interrupt_en),
+        .interrupt_cause_i(ex_interrupt_cause),
+
+        //数据前递：来自 EX_RAM、RAM_WB和WB
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
@@ -301,7 +330,11 @@ module top(
         .fun3_o      (ex_fun3_o),
         .mem_wdata_o (ex_mem_wdata_o),
         .mem_waddr_o (ex_mem_waddr_o),
-        .mem_raddr_o (ex_mem_raddr_o)
+        .mem_raddr_o (ex_mem_raddr_o),
+
+        .interrupt_en_o(interrupt_en_o),
+        .interrupt_cause_o(interrupt_cause_o),
+        .interrupt_pc_o(interrupt_pc_o)
     );
 
     ALU u_alu (
@@ -340,7 +373,7 @@ module top(
         .mem_waddr_o  (mem_write_addr),
         .mem_raddr_o  (mem_read_addr),
 
-        //前�?�给EX
+        //前递给EX
         .EX_RAM_rd_wdata (EX_RAM_rd_wdata),
         .EX_RAM_rd_addr  (EX_RAM_rd_addr),
         .EX_RAM_mem_read (EX_RAM_mem_read),
